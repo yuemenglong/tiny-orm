@@ -29,6 +29,23 @@ macro_rules! row_take {
 }
 
 #[macro_export]
+macro_rules! entity_type {
+    ($TYPE:ty)=>{{
+        match stringify!($TYPE){
+            "i32"=>"INTEGER",
+            "String"=>"VARCHAR(128)",
+            _=>unreachable!(),
+        }
+    }}
+}
+
+#[macro_export]
+macro_rules! entity_type_nullable {
+    (Option<$TYPE:ty>)=>(entity_type!($TYPE).to_string());
+    ($TYPE:ty)=>(format!("{} NOT NULL", entity_type!($TYPE)));
+}
+
+#[macro_export]
 macro_rules! entity {
     (struct $ENTITY:ident{
         $($FIELD:ident:$TYPE:ty,)*
@@ -42,6 +59,11 @@ macro_rules! entity {
         impl Entity for $ENTITY{
             fn get_table()->String{
                 format!("`{}`", stringify!($ENTITY))
+            }
+            fn get_create_table()->String{
+                let mut vec = vec!["`id` BIGINT PRIMARY KEY AUTO_INCREMENT".to_string()];
+                $(vec.push(format!("`{}` {}", stringify!($FIELD), entity_type_nullable!($TYPE)));)*
+                format!("CREATE TABLE {} IF NOT EXISTS ({})", $ENTITY::get_table(), vec.join(", "))
             }
             fn set_id(&mut self, id:u64){
                 self.id = Some(id);

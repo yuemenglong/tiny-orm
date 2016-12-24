@@ -12,6 +12,7 @@ pub mod db;
 use db::DB;
 
 pub trait Entity {
+    fn get_create_table() -> String;
     fn get_table() -> String;
     fn get_fields() -> String;
     fn get_prepare() -> String;
@@ -33,7 +34,5 @@ pub fn open(user: &str, pwd: &str, host: &str, port: u16, db: &str) -> Result<DB
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }
