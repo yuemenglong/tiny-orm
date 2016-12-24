@@ -16,6 +16,7 @@ macro_rules! cond_item {
     }};
 }
 
+#[macro_export]
 macro_rules! row_take {
     ($FIELD:ident, Option<$TYPE:ty>, $ROW:ident) => {{
         let ret = $ROW.take(stringify!($FIELD));
@@ -67,7 +68,7 @@ macro_rules! entity {
             fn get_params_id(&self)->Vec<(String, Value)>{
                 vec![("id".to_string(), Value::from(self.id))]
             }
-            fn from_row(mut row: mysql::conn::Row)->$ENTITY{
+            fn from_row(mut row: Row)->$ENTITY{
                 $ENTITY{
                     id: row_take!(id, Option<u64>, row),
                     $($FIELD: row_take!($FIELD, $TYPE, row),)*

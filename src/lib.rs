@@ -1,11 +1,13 @@
 extern crate mysql;
 
-use mysql::Value;
-use mysql::error::Error;
+pub use mysql::Value;
+pub use mysql::Row;
+pub use mysql::error::Error;
 
+#[macro_use]
+pub mod macros;
 pub mod cond;
 pub mod db;
-pub mod macros;
 
 use db::DB;
 
@@ -35,4 +37,3 @@ mod tests {
 
     }
 }
-
