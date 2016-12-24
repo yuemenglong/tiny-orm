@@ -1,0 +1,11 @@
+[package]
+name = "orm"
+version = "0.1.0"
+authors = ["yml <yuemenglong@126.com>"]
+
+[dependencies]
+
+[dependencies.mysql]
+version = "*"
+default-features = false
+features = ["pipe"]
