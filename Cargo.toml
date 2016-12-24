@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["yml <yuemenglong@126.com>"]
 
 [dependencies]
+chrono = { version = "0.2", features = ["serde", "rustc-serialize"] }
 
 [dependencies.mysql]
 version = "*"

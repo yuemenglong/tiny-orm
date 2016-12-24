@@ -10,6 +10,24 @@ pub struct DB {
 }
 
 impl DB {
+    pub fn create_table<E: Entity>(&self) -> Result<u64, Error> {
+        let sql = E::get_create_table();
+        println!("{}", sql);
+        let res = self.pool.prep_exec(sql, ());
+        match res {
+            Ok(res) => Ok(res.affected_rows()),
+            Err(err) => Err(err),
+        }
+    }
+    pub fn drop_table<E: Entity>(&self) -> Result<u64, Error> {
+        let sql = E::get_drop_table();
+        println!("{}", sql);
+        let res = self.pool.prep_exec(sql, ());
+        match res {
+            Ok(res) => Ok(res.affected_rows()),
+            Err(err) => Err(err),
+        }
+    }
     pub fn insert<E: Entity + Clone>(&self, entity: &E) -> Result<E, Error> {
         let sql = format!("INSERT INTO {} SET {}", E::get_table(), E::get_prepare());
         println!("{}", sql);

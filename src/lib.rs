@@ -1,8 +1,12 @@
 extern crate mysql;
+extern crate chrono;
 
-pub use mysql::Value;
 pub use mysql::Row;
 pub use mysql::error::Error;
+pub use chrono::NaiveDate as Date;
+pub use chrono::NaiveTime as Time;
+pub use chrono::NaiveDateTime as DateTime;
+pub use mysql::Value;
 
 #[macro_use]
 pub mod macros;
@@ -13,6 +17,7 @@ use db::DB;
 
 pub trait Entity {
     fn get_create_table() -> String;
+    fn get_drop_table() -> String;
     fn get_table() -> String;
     fn get_fields() -> String;
     fn get_prepare() -> String;

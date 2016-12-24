@@ -17,15 +17,30 @@ macro_rules! cond_item {
 }
 
 #[macro_export]
+macro_rules! datetime {
+    ($Y:expr,$M:expr,$D:expr) => (datetime!($Y,$M,$D,0,0,0,0));
+    ($Y:expr,$M:expr,$D:expr,$H:expr,$m:expr,$S:expr) => (datetime!($Y,$M,$D,$H,$m,$S,0));
+    ($Y:expr,$M:expr,$D:expr,$H:expr,$m:expr,$S:expr,$NS:expr) => {{
+        let date = Date::from_ymd($Y,$M,$D);
+        let time = Time::from_hms_milli($H, $m, $S, $NS);
+        DateTime::new(date, time)
+    }};
+}
+
+#[macro_export]
 macro_rules! row_take {
     ($FIELD:ident, Option<$TYPE:ty>, $ROW:ident) => {{
         let ret = $ROW.take(stringify!($FIELD));
         ret
     }};
     ($FIELD:ident, $TYPE:ty, $ROW:ident) => {{
-        let ret = $ROW.take(stringify!($FIELD));
-        ret.unwrap()
+        let ret = $ROW.take(stringify!($FIELD)).unwrap();
+        ret
     }};
+}
+#[macro_export]
+macro_rules! value_from {
+    ($SELF:ident,$FIELD:ident,$TYPE:ty) => (Value::from(&$SELF.$FIELD));
 }
 
 #[macro_export]
@@ -34,6 +49,8 @@ macro_rules! entity_type {
         match stringify!($TYPE){
             "i32"=>"INTEGER",
             "String"=>"VARCHAR(128)",
+            "Date"=>"DATE",
+            "DateTime"=>"DATETIME",
             _=>unreachable!(),
         }
     }}
@@ -63,7 +80,10 @@ macro_rules! entity {
             fn get_create_table()->String{
                 let mut vec = vec!["`id` BIGINT PRIMARY KEY AUTO_INCREMENT".to_string()];
                 $(vec.push(format!("`{}` {}", stringify!($FIELD), entity_type_nullable!($TYPE)));)*
-                format!("CREATE TABLE {} IF NOT EXISTS ({})", $ENTITY::get_table(), vec.join(", "))
+                format!("CREATE TABLE IF NOT EXISTS {} ({})", $ENTITY::get_table(), vec.join(", "))
+            }
+            fn get_drop_table()->String{
+                format!("DROP TABLE IF EXISTS {}", $ENTITY::get_table())
             }
             fn set_id(&mut self, id:u64){
                 self.id = Some(id);
@@ -84,7 +104,7 @@ macro_rules! entity {
             }
             fn get_params(&self)->Vec<(String, Value)>{
                 let mut vec = Vec::new();
-                $(vec.push((stringify!($FIELD).to_string(), Value::from(&self.$FIELD)));)*
+                $(vec.push((stringify!($FIELD).to_string(), value_from!(self,$FIELD,$TYPE)));)*
                 vec
             }
             fn get_params_id(&self)->Vec<(String, Value)>{
