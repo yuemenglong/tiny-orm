@@ -29,7 +29,7 @@ impl DB {
         }
     }
     pub fn insert<E: Entity + Clone>(&self, entity: &E) -> Result<E, Error> {
-        let sql = format!("INSERT INTO {} SET {}", E::get_table(), E::get_prepare());
+        let sql = format!("INSERT INTO `{}` SET {}", E::get_name(), E::get_prepare());
         println!("{}", sql);
         let res = self.pool.prep_exec(sql, entity.get_params());
         match res {
@@ -42,10 +42,10 @@ impl DB {
         }
     }
     pub fn update<E: Entity>(&self, entity: &E) -> Result<u64, Error> {
-        let sql = format!("UPDATE {} SET {} WHERE {}",
-                          E::get_table(),
+        let sql = format!("UPDATE `{}` SET {} WHERE `id` = {}",
+                          E::get_name(),
                           E::get_prepare(),
-                          entity.get_id_cond());
+                          entity.get_id().unwrap());
         println!("{}", sql);
         let res = self.pool.prep_exec(sql, entity.get_params());
         match res {
@@ -54,9 +54,9 @@ impl DB {
         }
     }
     pub fn get<E: Entity>(&self, id: u64) -> Result<Option<E>, Error> {
-        let sql = format!("SELECT {} FROM {} WHERE `id` = {}",
-                          E::get_fields(),
-                          E::get_table(),
+        let sql = format!("SELECT {} FROM `{}` WHERE `id` = {}",
+                          E::get_field_list(),
+                          E::get_name(),
                           id);
         println!("{}", sql);
         let res = self.pool.first_exec(sql, ());
@@ -66,9 +66,9 @@ impl DB {
         }
     }
     pub fn delete<E: Entity>(&self, entity: E) -> Result<u64, Error> {
-        let sql = format!("DELETE FROM {} WHERE {}",
-                          E::get_table(),
-                          entity.get_id_cond());
+        let sql = format!("DELETE FROM `{}` WHERE `id` = {}",
+                          E::get_name(),
+                          entity.get_id().unwrap());
         println!("{}", sql);
         let res = self.pool.prep_exec(sql, ());
         match res {
@@ -99,9 +99,9 @@ impl<'a> SelectBuilder<'a> {
                 format!(" WHERE {}", str)
             }
         };
-        let sql = format!("SELECT {} FROM {}{}",
-                          E::get_fields(),
-                          E::get_table(),
+        let sql = format!("SELECT `{}` FROM {}{}",
+                          E::get_field_list(),
+                          E::get_name(),
                           cond_str);
         println!("{}", sql);
         let mut params = Vec::new();

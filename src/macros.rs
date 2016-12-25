@@ -38,6 +38,7 @@ macro_rules! row_take {
         ret
     }};
 }
+
 #[macro_export]
 macro_rules! value_from {
     ($SELF:ident,$FIELD:ident,$TYPE:ty) => (Value::from(&$SELF.$FIELD));
@@ -58,8 +59,14 @@ macro_rules! entity_type {
 
 #[macro_export]
 macro_rules! entity_type_nullable {
-    (Option<$TYPE:ty>)=>(entity_type!($TYPE).to_string());
-    ($TYPE:ty)=>(format!("{} NOT NULL", entity_type!($TYPE)));
+    (Option<$TYPE:ty>)=>(true);
+    ($TYPE:ty)=>(false);
+}
+
+#[macro_export]
+macro_rules! entity_ty {
+    (Option<$TYPE:ty>)=>(entity_ty!($TYPE));
+    ($TYPE:ty)=>(stringify!($TYPE));
 }
 
 #[macro_export]
@@ -74,41 +81,30 @@ macro_rules! entity {
         }
 
         impl Entity for $ENTITY{
-            fn get_table()->String{
-                format!("`{}`", stringify!($ENTITY))
-            }
-            fn get_create_table()->String{
-                let mut vec = vec!["`id` BIGINT PRIMARY KEY AUTO_INCREMENT".to_string()];
-                $(vec.push(format!("`{}` {}", stringify!($FIELD), entity_type_nullable!($TYPE)));)*
-                format!("CREATE TABLE IF NOT EXISTS {} ({})", $ENTITY::get_table(), vec.join(", "))
-            }
-            fn get_drop_table()->String{
-                format!("DROP TABLE IF EXISTS {}", $ENTITY::get_table())
-            }
             fn set_id(&mut self, id:u64){
                 self.id = Some(id);
             }
-            fn get_id_cond(&self)->String{
-                format!("`id` = {}", self.id.unwrap())
+            fn get_id(&self)->Option<u64>{
+                self.id
             }
-            fn get_fields()->String{
-                let mut vec = Vec::new();
-                vec.push("`id`".to_string());
-                $(vec.push(format!("`{}`", stringify!($FIELD)));)*
-                vec.join(", ")
+            fn get_name()->String{
+                stringify!($ENTITY).to_string()
             }
-            fn get_prepare()->String{
+            fn get_field_meta()->Vec<FieldMeta>{
                 let mut vec = Vec::new();
-                $(vec.push(format!("`{}` = :{}", stringify!($FIELD), stringify!($FIELD)));)*
-                vec.join(", ")
+                $(vec.push(FieldMeta{
+                    name: stringify!($FIELD).to_string(),
+                    ty:entity_ty!($TYPE).to_string(), 
+                    raw_ty: stringify!($TYPE).to_string(),
+                    length: 0,
+                    nullable: entity_type_nullable!($TYPE),
+                });)*
+                vec
             }
             fn get_params(&self)->Vec<(String, Value)>{
                 let mut vec = Vec::new();
                 $(vec.push((stringify!($FIELD).to_string(), value_from!(self,$FIELD,$TYPE)));)*
                 vec
-            }
-            fn get_params_id(&self)->Vec<(String, Value)>{
-                vec![("id".to_string(), Value::from(self.id))]
             }
             fn from_row(mut row: Row)->$ENTITY{
                 $ENTITY{
