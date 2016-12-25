@@ -7,6 +7,7 @@ macro_rules! cond {
     }}
 }
 
+#[macro_export]
 macro_rules! cond_item {
     ($FIELD:ident=$E:expr) => {{
         Cond::Eq(stringify!($FIELD).to_string(), Value::from($E))
@@ -29,12 +30,12 @@ macro_rules! datetime {
 
 #[macro_export]
 macro_rules! row_take {
-    ($FIELD:ident, Option<$TYPE:ty>, $ROW:ident) => {{
-        let ret = $ROW.take(stringify!($FIELD));
+    ($NAME:expr, Option<$TYPE:ty>, $ROW:ident) => {{
+        let ret = $ROW.take($NAME);
         ret
     }};
-    ($FIELD:ident, $TYPE:ty, $ROW:ident) => {{
-        let ret = $ROW.take(stringify!($FIELD)).unwrap();
+    ($NAME:expr, $TYPE:ty, $ROW:ident) => {{
+        let ret = $ROW.take($NAME).unwrap();
         ret
     }};
 }
@@ -42,19 +43,6 @@ macro_rules! row_take {
 #[macro_export]
 macro_rules! value_from {
     ($SELF:ident,$FIELD:ident,$TYPE:ty) => (Value::from(&$SELF.$FIELD));
-}
-
-#[macro_export]
-macro_rules! entity_type {
-    ($TYPE:ty)=>{{
-        match stringify!($TYPE){
-            "i32"=>"INTEGER",
-            "String"=>"VARCHAR(128)",
-            "Date"=>"DATE",
-            "DateTime"=>"DATETIME",
-            _=>unreachable!(),
-        }
-    }}
 }
 
 #[macro_export]
@@ -108,8 +96,17 @@ macro_rules! entity {
             }
             fn from_row(mut row: Row)->$ENTITY{
                 $ENTITY{
-                    id: row_take!(id, Option<u64>, row),
-                    $($FIELD: row_take!($FIELD, $TYPE, row),)*
+                    id: row_take!("id", Option<u64>, row),
+                    $($FIELD: row_take!(stringify!($FIELD), $TYPE, row),)*
+                }
+            }
+            fn from_row_ex(mut row: Row, nameMap:&HashMap<String,String>)->$ENTITY{
+                $ENTITY{
+                    id:row_take!(nameMap.get("id").unwrap().as_ref(), Option<u64>, row),
+                    $($FIELD: {
+                        let column = nameMap.get(stringify!($FIELD)).unwrap();
+                        row_take!(column.as_ref(), $TYPE, row)
+                    },)*
                 }
             }
         }

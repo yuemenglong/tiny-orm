@@ -1,5 +1,4 @@
-use mysql::Value;
-use mysql::Row;
+use super::*;
 
 #[derive(Debug)]
 pub struct FieldMeta {
@@ -37,6 +36,7 @@ pub trait Entity {
     fn get_field_meta() -> Vec<FieldMeta>;
     fn get_params(&self) -> Vec<(String, Value)>;
     fn from_row(mut row: Row) -> Self;
+    fn from_row_ex(mut row: Row, nameMap:&HashMap<String,String>)->Self;
 
     fn get_create_table() -> String {
         let mut vec = vec!["`id` BIGINT PRIMARY KEY AUTO_INCREMENT".to_string()];

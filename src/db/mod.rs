@@ -1,5 +1,6 @@
 use mysql::Pool;
-use mysql::error::Error;
+use mysql::Error;
+use std::marker::PhantomData;
 use std::cell::RefCell;
 
 use cond::Cond;
@@ -76,21 +77,23 @@ impl DB {
             Err(err) => Err(err),
         }
     }
-    pub fn select(&self, conds: Vec<Cond>) -> SelectBuilder {
-        SelectBuilder {
+    pub fn select<'a, E: Entity>(&'a self, conds: Vec<Cond>) -> SelectBuilder<'a, E> {
+        SelectBuilder::<'a, E> {
             pool: &self.pool,
             conds: RefCell::new(conds),
+            phantom: PhantomData,
         }
     }
 }
 
-pub struct SelectBuilder<'a> {
+pub struct SelectBuilder<'a, E: Entity> {
     pool: &'a Pool,
     conds: RefCell<Vec<Cond>>,
+    phantom: PhantomData<E>,
 }
 
-impl<'a> SelectBuilder<'a> {
-    pub fn execute<E: Entity>(self) -> Result<Vec<E>, Error> {
+impl<'a, E: Entity> SelectBuilder<'a, E> {
+    pub fn execute(self) -> Result<Vec<E>, Error> {
         let cond_str = match self.conds.borrow().len() {
             0 => String::new(),
             _ => {
@@ -99,7 +102,7 @@ impl<'a> SelectBuilder<'a> {
                 format!(" WHERE {}", str)
             }
         };
-        let sql = format!("SELECT `{}` FROM {}{}",
+        let sql = format!("SELECT {} FROM `{}` {}",
                           E::get_field_list(),
                           E::get_name(),
                           cond_str);
